@@ -1621,9 +1621,6 @@ export default function ArabicTypingApp() {
                         key={i}
                         style={{
                           color: isCorrect ? "#10b981" : "#ef4444",
-                          background: isCorrect ? "#10b98111" : "#ef444411",
-                          borderRadius: 3,
-                          padding: "0 1px",
                         }}
                       >
                         {char}
