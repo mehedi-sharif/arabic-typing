@@ -996,13 +996,19 @@ export default function ArabicTypingApp() {
   const startLesson = useCallback((l) => {
     setLesson(l);
     setScreen("practice");
-    setPhase("letters");
-    const letterItems =
-      l.letters.length > 0
-        ? shuffleArray([...l.letters, ...l.letters, ...l.letters]).slice(0, 10)
-        : [];
-    setItems(letterItems.length > 0 ? letterItems : shuffleArray(l.words));
-    if (letterItems.length === 0) setPhase("words");
+    // Surah lessons: go straight to sentences (line by line)
+    if (l.id === 7 || l.id === 8) {
+      setPhase("sentences");
+      setItems([...l.sentences]);
+    } else {
+      setPhase("letters");
+      const letterItems =
+        l.letters.length > 0
+          ? shuffleArray([...l.letters, ...l.letters, ...l.letters]).slice(0, 10)
+          : [];
+      setItems(letterItems.length > 0 ? letterItems : shuffleArray(l.words));
+      if (letterItems.length === 0) setPhase("words");
+    }
     setCurrentIdx(0);
     setTyped("");
     setErrors(0);
