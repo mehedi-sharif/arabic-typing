@@ -240,7 +240,7 @@ function shuffleArray(arr) {
 
 // ─── Components ────────────────────────────────────────────────────────
 
-function VirtualKeyboard({ activeKey, highlightKeys, onKeyTap, isMobile, showFingers }) {
+function VirtualKeyboard({ activeKey, highlightKeys, onKeyTap, isMobile }) {
   const keySize = isMobile ? 28 : 48;
   const keyFont = isMobile ? 13 : 20;
   const subFont = isMobile ? 7 : 9;
@@ -287,16 +287,11 @@ function VirtualKeyboard({ activeKey, highlightKeys, onKeyTap, isMobile, showFin
                     ? "#10b981"
                     : isHighlight
                     ? "#fbbf24"
-                    : showFingers
-                    ? `${FINGER_COLORS[KEY_FINGER[k.en]] || "#1e293b"}22`
                     : "#1e293b",
                   color: isActive || isHighlight ? "#0f172a" : "#e2e8f0",
                   border: `${isMobile ? 1 : 2}px solid ${
-                    isActive ? "#059669" : isHighlight ? "#f59e0b" : showFingers ? (FINGER_COLORS[KEY_FINGER[k.en]] || "#334155") + "88" : "#334155"
+                    isActive ? "#059669" : isHighlight ? "#f59e0b" : "#334155"
                   }`,
-                  borderBottom: showFingers && !isActive && !isHighlight
-                    ? `3px solid ${FINGER_COLORS[KEY_FINGER[k.en]] || "#334155"}`
-                    : undefined,
                   transition: "all 0.15s ease",
                   transform: isActive ? "scale(1.12)" : "scale(1)",
                   boxShadow: isActive
@@ -338,9 +333,8 @@ function VirtualKeyboard({ activeKey, highlightKeys, onKeyTap, isMobile, showFin
             width: spaceW,
             height: spaceH,
             borderRadius: isMobile ? 5 : 8,
-            background: activeKey === " " ? "#10b981" : showFingers ? `${FINGER_COLORS.thumb}22` : "#1e293b",
-            border: `${isMobile ? 1 : 2}px solid ${activeKey === " " ? "#059669" : showFingers ? FINGER_COLORS.thumb + "88" : "#334155"}`,
-            borderBottom: showFingers && activeKey !== " " ? `3px solid ${FINGER_COLORS.thumb}` : undefined,
+            background: activeKey === " " ? "#10b981" : "#1e293b",
+            border: `${isMobile ? 1 : 2}px solid ${activeKey === " " ? "#059669" : "#334155"}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -934,7 +928,6 @@ export default function ArabicTypingApp() {
   const [elapsed, setElapsed] = useState(0);
   const [completedLessons, setCompletedLessons] = useState([]);
   const [showHint, setShowHint] = useState(true);
-  const [showFingers, setShowFingers] = useState(true);
   const [feedback, setFeedback] = useState(null);
   const inputRef = useRef(null);
   const timerRef = useRef(null);
@@ -1983,51 +1976,12 @@ export default function ArabicTypingApp() {
             </button>
         </div>
 
-        {/* Finger guide toggle */}
-        <div style={{ textAlign: "center", marginBottom: 4 }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowFingers(!showFingers); }}
-            style={{
-              background: showFingers ? "#1e3a5f" : "#334155",
-              color: showFingers ? "#3b82f6" : "#64748b",
-              border: `1px solid ${showFingers ? "#3b82f6" + "44" : "#475569"}`,
-              borderRadius: 6,
-              padding: isMobile ? "4px 10px" : "5px 14px",
-              fontSize: isMobile ? 10 : 12,
-              cursor: "pointer",
-            }}
-          >
-            {showFingers ? "✋ Finger guide ON" : "✋ Finger guide OFF"}
-          </button>
-        </div>
-
-        {/* Finger legend */}
-        {showFingers && (
-          <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? 4 : 8, flexWrap: "wrap", marginBottom: 4 }}>
-            {[
-              { label: "Pinky", color: FINGER_COLORS.pinkyL },
-              { label: "Ring", color: FINGER_COLORS.ringL },
-              { label: "Middle", color: FINGER_COLORS.middleL },
-              { label: "Index L", color: FINGER_COLORS.indexL },
-              { label: "Index R", color: FINGER_COLORS.indexR },
-              { label: "Middle", color: FINGER_COLORS.middleR },
-              { label: "Thumb", color: FINGER_COLORS.thumb },
-            ].map((f) => (
-              <div key={f.label + f.color} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: isMobile ? 8 : 10, color: "#94a3b8" }}>
-                <div style={{ width: isMobile ? 8 : 10, height: isMobile ? 8 : 10, borderRadius: 2, background: f.color }} />
-                {f.label}
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Virtual Keyboard */}
         <VirtualKeyboard
           activeKey={activeKey}
           highlightKeys={highlightKeys}
           onKeyTap={handleKeyTap}
           isMobile={isMobile}
-          showFingers={showFingers}
         />
 
         {/* Hidden input for desktop focus — off-screen to prevent scroll */}
