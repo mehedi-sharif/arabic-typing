@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# GitHub token (never commit this)
+.github_token
+
+# Environment variables (never commit this)
+.env
+.env.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
