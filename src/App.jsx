@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "./lib/supabase";
+import StatsPage from "./StatsPage";
 
 // ─── Responsive hook ───────────────────────────────────────────────────
 function useIsMobile() {
@@ -1127,6 +1129,43 @@ export default function ArabicTypingApp() {
   const hardWpm = hardElapsed > 0 ? Math.round((hardCorrectChars / 5 / hardElapsed) * 60) : 0;
   const hardAccuracy = hardTotalChars > 0 ? Math.round((hardCorrectChars / hardTotalChars) * 100) : 100;
 
+  // ── Activity logging ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (screen === "results" && lesson) {
+      supabase.from("activity_logs").insert({
+        lesson_id: String(lesson.id),
+        lesson_title: lesson.title,
+        lesson_title_en: lesson.titleEn,
+        lesson_type: "normal",
+        wpm,
+        accuracy,
+        duration_seconds: elapsed,
+        best_streak: bestStreak,
+        total_chars: totalChars,
+        correct_chars: correctChars,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
+
+  useEffect(() => {
+    if (screen === "hard-results" && hardLesson) {
+      supabase.from("activity_logs").insert({
+        lesson_id: String(hardLesson.id),
+        lesson_title: hardLesson.title,
+        lesson_title_en: hardLesson.titleEn,
+        lesson_type: "hard",
+        wpm: hardWpm,
+        accuracy: hardAccuracy,
+        duration_seconds: hardElapsed,
+        best_streak: 0,
+        total_chars: hardTotalChars,
+        correct_chars: hardCorrectChars,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
+
   // Shared input handler (used by both keyboard events and tap)
   const processInput = useCallback(
     (arabicChar, enKey) => {
@@ -1272,6 +1311,12 @@ export default function ArabicTypingApp() {
             <p style={{ fontSize: isMobile ? 12 : 14, color: "#64748b", marginTop: 4 }}>
               Learn to type in Arabic step by step
             </p>
+            <button
+              onClick={() => setScreen("stats")}
+              style={{ marginTop: 14, background: "linear-gradient(135deg, #1e293b, #0f172a)", color: "#94a3b8", border: "1px solid #334155", borderRadius: 10, padding: isMobile ? "8px 18px" : "10px 24px", fontSize: isMobile ? 12 : 14, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}
+            >
+              📊 Activity Log
+            </button>
           </div>
 
           <h2
@@ -1349,6 +1394,11 @@ export default function ArabicTypingApp() {
         </div>
       </div>
     );
+  }
+
+  // ─── STATS SCREEN ────────────────────────────────────────────────────
+  if (screen === "stats") {
+    return <StatsPage onBack={() => setScreen("home")} isMobile={isMobile} />;
   }
 
   // ─── EXPLORE SCREEN ──────────────────────────────────────────────────
