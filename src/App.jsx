@@ -198,35 +198,6 @@ KEYBOARD_ROWS.forEach((row) =>
 );
 const ARABIC_CHARS = new Set(Object.keys(AR_TO_EN));
 
-// ─── Finger color mapping ──────────────────────────────────────────────
-// Which finger presses which key (standard touch typing)
-const FINGER_COLORS = {
-  pinkyL:  "#ef4444",  // red
-  ringL:   "#f97316",  // orange
-  middleL: "#eab308",  // yellow
-  indexL:  "#22c55e",  // green
-  indexR:  "#3b82f6",  // blue
-  middleR: "#a855f7",  // purple
-  ringR:   "#f97316",  // orange
-  pinkyR:  "#ef4444",  // red
-  thumb:   "#64748b",  // gray (space)
-};
-
-// Map english key → finger
-const KEY_FINGER = {
-  "`": "pinkyL", "1": "pinkyL", "2": "ringL", "3": "middleL", "4": "indexL",
-  "5": "indexL", "6": "indexR", "7": "indexR", "8": "middleR", "9": "ringR",
-  "0": "pinkyR", "-": "pinkyR", "=": "pinkyR",
-  "q": "pinkyL", "w": "ringL", "e": "middleL", "r": "indexL", "t": "indexL",
-  "y": "indexR", "u": "indexR", "i": "middleR", "o": "ringR", "p": "pinkyR",
-  "[": "pinkyR", "]": "pinkyR",
-  "a": "pinkyL", "s": "ringL", "d": "middleL", "f": "indexL", "g": "indexL",
-  "h": "indexR", "j": "indexR", "k": "middleR", "l": "ringR", ";": "pinkyR",
-  "'": "pinkyR",
-  "z": "pinkyL", "x": "ringL", "c": "middleL", "v": "indexL", "b": "indexL",
-  "n": "indexR", "m": "indexR", ",": "middleR", ".": "ringR", "/": "pinkyR",
-  " ": "thumb",
-};
 
 // ─── Utility ───────────────────────────────────────────────────────────
 function shuffleArray(arr) {
@@ -858,14 +829,11 @@ function ExploreKeyboard({ isMobile, onBack }) {
                       ? "linear-gradient(135deg, #1e40af, #3b82f6)"
                       : isDiscovered
                       ? "#064e3b"
-                      : `${FINGER_COLORS[KEY_FINGER[k.en]] || "#1e293b"}18`,
+                      : "#1e293b",
                     color: isSelected ? "#fff" : isDiscovered ? "#10b981" : "#e2e8f0",
                     border: `${isMobile ? 1 : 2}px solid ${
-                      isSelected ? "#3b82f6" : isDiscovered ? "#10b981" : (FINGER_COLORS[KEY_FINGER[k.en]] || "#334155") + "66"
+                      isSelected ? "#3b82f6" : isDiscovered ? "#10b981" : "#334155"
                     }`,
-                    borderBottom: !isSelected && !isDiscovered
-                      ? `3px solid ${FINGER_COLORS[KEY_FINGER[k.en]] || "#334155"}`
-                      : undefined,
                     transition: "all 0.2s ease",
                     transform: isSelected ? "scale(1.15)" : "scale(1)",
                     boxShadow: isSelected ? "0 0 16px rgba(59,130,246,0.5)" : "none",
