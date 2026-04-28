@@ -1302,6 +1302,8 @@ export default function ArabicTypingApp() {
         best_streak: bestStreak,
         total_chars: totalChars,
         correct_chars: correctChars,
+      }).then(({ error }) => {
+        if (error) console.error("Failed to log activity:", error.message, error);
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1320,6 +1322,8 @@ export default function ArabicTypingApp() {
         best_streak: 0,
         total_chars: hardTotalChars,
         correct_chars: hardCorrectChars,
+      }).then(({ error }) => {
+        if (error) console.error("Failed to log hard activity:", error.message, error);
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
