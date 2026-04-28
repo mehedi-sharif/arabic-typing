@@ -1088,8 +1088,15 @@ export default function ArabicTypingApp() {
   const [completedLessons, setCompletedLessons] = useState([]);
   const [showHint, setShowHint] = useState(true);
   const [feedback, setFeedback] = useState(null);
+  const [dbConnected, setDbConnected] = useState(null);
   const inputRef = useRef(null);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    supabase.from("activity_logs").select("id").limit(1)
+      .then(({ error }) => setDbConnected(!error))
+      .catch(() => setDbConnected(false));
+  }, []);
 
   // ── Hard mode state ──────────────────────────────────────────────────
   const [hardLesson, setHardLesson] = useState(null);
@@ -1446,12 +1453,31 @@ export default function ArabicTypingApp() {
                 fontSize: isMobile ? 24 : 36,
                 fontWeight: 800,
                 margin: 0,
-                background: "linear-gradient(135deg, #3b82f6, #10b981)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
               }}
             >
-              Arabic Typing Tutor
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #3b82f6, #10b981)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Arabic Typing Tutor
+              </span>
+              <span
+                title={dbConnected === null ? "Checking..." : dbConnected ? "Database connected" : "Database disconnected"}
+                style={{
+                  display: "inline-block",
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: dbConnected === null ? "#64748b" : dbConnected ? "#22c55e" : "#64748b",
+                  flexShrink: 0,
+                }}
+              />
             </h1>
             <p
               style={{
