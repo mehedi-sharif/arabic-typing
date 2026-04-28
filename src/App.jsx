@@ -1289,9 +1289,17 @@ export default function ArabicTypingApp() {
   const hardAccuracy = hardTotalChars > 0 ? Math.round((hardCorrectChars / hardTotalChars) * 100) : 100;
 
   // ── Activity logging ──────────────────────────────────────────────────
+  function saveActivityLog(entry) {
+    const key = "arabic_typing_logs";
+    const existing = JSON.parse(localStorage.getItem(key) || "[]");
+    existing.unshift({ ...entry, id: Date.now(), created_at: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(existing));
+    supabase.from("activity_logs").insert(entry).catch(() => {});
+  }
+
   useEffect(() => {
     if (screen === "results" && lesson) {
-      supabase.from("activity_logs").insert({
+      saveActivityLog({
         lesson_id: String(lesson.id),
         lesson_title: lesson.title,
         lesson_title_en: lesson.titleEn,
@@ -1302,8 +1310,6 @@ export default function ArabicTypingApp() {
         best_streak: bestStreak,
         total_chars: totalChars,
         correct_chars: correctChars,
-      }).then(({ error }) => {
-        if (error) console.error("Failed to log activity:", error.message, error);
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1311,7 +1317,7 @@ export default function ArabicTypingApp() {
 
   useEffect(() => {
     if (screen === "hard-results" && hardLesson) {
-      supabase.from("activity_logs").insert({
+      saveActivityLog({
         lesson_id: String(hardLesson.id),
         lesson_title: hardLesson.title,
         lesson_title_en: hardLesson.titleEn,
@@ -1322,8 +1328,6 @@ export default function ArabicTypingApp() {
         best_streak: 0,
         total_chars: hardTotalChars,
         correct_chars: hardCorrectChars,
-      }).then(({ error }) => {
-        if (error) console.error("Failed to log hard activity:", error.message, error);
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

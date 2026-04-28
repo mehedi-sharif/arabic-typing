@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "./lib/supabase";
 
 function fmt(secs) {
   if (secs < 60) return `${secs}s`;
@@ -27,20 +26,9 @@ export default function StatsPage({ onBack, isMobile }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchLogs() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("activity_logs")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) {
-        setError(error.message);
-      } else {
-        setLogs(data || []);
-      }
-      setLoading(false);
-    }
-    fetchLogs();
+    const local = JSON.parse(localStorage.getItem("arabic_typing_logs") || "[]");
+    setLogs(local);
+    setLoading(false);
   }, []);
 
   // ── Derived summary stats ──────────────────────────────────────────────
