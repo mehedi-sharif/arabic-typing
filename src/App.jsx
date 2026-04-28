@@ -1453,7 +1453,6 @@ export default function ArabicTypingApp() {
         {/* ── Left: main card (6 of 9 cols) ── */}
         <div className="col-span-9 lg:col-span-6" style={homeCardStyle}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 20 : 32 }}>
-            <div style={{ fontSize: isMobile ? 36 : 48, marginBottom: 8 }}>⌨️</div>
             <h1
               style={{
                 fontSize: isMobile ? 24 : 36,
