@@ -884,11 +884,9 @@ function ActivitySidebar({ onViewAll }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("activity_logs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => { setLogs(data || []); setLoading(false); });
+    const local = JSON.parse(localStorage.getItem("arabic_typing_logs") || "[]");
+    setLogs(local);
+    setLoading(false);
   }, []);
 
   // ── helpers ──────────────────────────────────────────────────────────
