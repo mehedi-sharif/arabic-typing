@@ -888,128 +888,182 @@ function ActivitySidebar({ onViewAll }) {
       .from("activity_logs")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(20)
       .then(({ data }) => { setLogs(data || []); setLoading(false); });
   }, []);
 
-  const totalSessions = logs.length;
-  const avgWpm   = totalSessions ? Math.round(logs.reduce((s, l) => s + (l.wpm || 0), 0) / totalSessions) : 0;
-  const avgAcc   = totalSessions ? Math.round(logs.reduce((s, l) => s + (l.accuracy || 0), 0) / totalSessions) : 0;
-  const totalSec = logs.reduce((s, l) => s + (l.duration_seconds || 0), 0);
-
+  // ── helpers ──────────────────────────────────────────────────────────
   function fmt(secs) {
+    if (!secs) return "0s";
     if (secs < 60) return `${secs}s`;
     const m = Math.floor(secs / 60);
-    return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    return rm ? `${h}h ${rm}m` : `${h}h`;
   }
-  function fmtDate(iso) {
-    const d = new Date(iso);
-    const now = new Date();
-    const diff = Math.floor((now - d) / 86400000);
+  function toDateKey(iso) {
+    return new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD
+  }
+  function dayLabel(dateKey) {
+    const d = new Date(dateKey + "T12:00:00");
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    const diff = Math.round((today - d) / 86400000);
     if (diff === 0) return "Today";
     if (diff === 1) return "Yesterday";
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   }
 
-  const sidebarStyle = {
-    background: "rgba(30, 41, 59, 0.8)",
-    backdropFilter: "blur(12px)",
-    borderRadius: 16,
-    border: "1px solid rgba(148, 163, 184, 0.1)",
-    padding: "20px 16px",
-    position: "sticky",
-    top: 24,
-    maxHeight: "calc(100vh - 48px)",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-  };
+  // ── overall stats ────────────────────────────────────────────────────
+  const totalSessions = logs.length;
+  const avgWpm = totalSessions ? Math.round(logs.reduce((s, l) => s + (l.wpm || 0), 0) / totalSessions) : 0;
+  const avgAcc = totalSessions ? Math.round(logs.reduce((s, l) => s + (l.accuracy || 0), 0) / totalSessions) : 0;
+  const totalSec = logs.reduce((s, l) => s + (l.duration_seconds || 0), 0);
+
+  // ── group by day ─────────────────────────────────────────────────────
+  const byDay = {};
+  logs.forEach((l) => {
+    const key = toDateKey(l.created_at);
+    if (!byDay[key]) byDay[key] = { sessions: 0, secs: 0 };
+    byDay[key].sessions++;
+    byDay[key].secs += l.duration_seconds || 0;
+  });
+  const dayKeys = Object.keys(byDay).sort((a, b) => b.localeCompare(a)); // newest first
+
+  // ── last 7 days for the graph ─────────────────────────────────────────
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const key = d.toLocaleDateString("en-CA");
+    const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
+    return { key, dayName, secs: byDay[key]?.secs || 0, sessions: byDay[key]?.sessions || 0 };
+  });
+  const maxSecs = Math.max(...last7.map((d) => d.secs), 1);
 
   return (
-    <div style={sidebarStyle}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div className="sticky top-6 max-h-[calc(100vh-48px)] overflow-y-auto flex flex-col gap-4 rounded-2xl border border-white/10 p-5"
+      style={{ background: "rgba(30,41,59,0.85)", backdropFilter: "blur(12px)" }}>
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9" }}>📊 Activity</div>
-          <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>Your progress</div>
+          <div className="text-sm font-extrabold text-slate-100">📊 Activity</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Your practice history</div>
         </div>
-        <button
-          onClick={onViewAll}
-          style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155", borderRadius: 8, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
-        >
+        <button onClick={onViewAll}
+          className="text-[11px] font-semibold text-slate-400 bg-slate-800 border border-slate-600 rounded-lg px-2.5 py-1 cursor-pointer hover:text-slate-200 transition-colors">
           View all →
         </button>
       </div>
 
-      {/* 3-column summary stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+      {/* ── 3-column summary stats ── */}
+      <div className="grid grid-cols-3 gap-2">
         {[
-          { icon: "🗓️", label: "Sessions", value: totalSessions, color: "#3b82f6" },
-          { icon: "⚡", label: "Avg WPM",  value: avgWpm,         color: "#10b981" },
-          { icon: "🎯", label: "Accuracy", value: `${avgAcc}%`,   color: avgAcc >= 90 ? "#10b981" : avgAcc >= 70 ? "#f59e0b" : "#ef4444" },
+          { icon: "🗓️", label: "Sessions", value: totalSessions, color: "#3b82f6", border: "#3b82f633" },
+          { icon: "⚡", label: "Avg WPM",  value: avgWpm,         color: "#10b981", border: "#10b98133" },
+          { icon: "🎯", label: "Accuracy", value: `${avgAcc}%`,   color: avgAcc >= 90 ? "#10b981" : avgAcc >= 70 ? "#f59e0b" : "#ef4444", border: "#ffffff11" },
         ].map((s) => (
-          <div key={s.label} style={{ background: "#0f172a", borderRadius: 10, padding: "10px 8px", border: `1px solid ${s.color}33`, textAlign: "center" }}>
-            <div style={{ fontSize: 18, marginBottom: 3 }}>{s.icon}</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: s.color, lineHeight: 1 }}>{totalSessions === 0 ? "—" : s.value}</div>
-            <div style={{ fontSize: 9, color: "#64748b", marginTop: 3 }}>{s.label}</div>
+          <div key={s.label} className="rounded-xl p-2 text-center" style={{ background: "#0f172a", border: `1px solid ${s.border}` }}>
+            <div className="text-lg mb-0.5">{s.icon}</div>
+            <div className="text-base font-extrabold leading-none" style={{ color: s.color }}>{totalSessions ? s.value : "—"}</div>
+            <div className="text-[9px] text-slate-500 mt-1">{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Total time strip */}
+      {/* ── Total time ── */}
       {totalSessions > 0 && (
-        <div style={{ background: "#0f172a", borderRadius: 10, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #1e293b" }}>
-          <span style={{ fontSize: 11, color: "#64748b" }}>⏱️ Total practice time</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#8b5cf6" }}>{fmt(totalSec)}</span>
+        <div className="flex justify-between items-center rounded-xl px-3 py-2 border border-slate-800" style={{ background: "#0f172a" }}>
+          <span className="text-[11px] text-slate-500">⏱️ Total practice time</span>
+          <span className="text-[13px] font-bold text-violet-400">{fmt(totalSec)}</span>
         </div>
       )}
 
-      {/* Divider */}
-      <div style={{ height: 1, background: "linear-gradient(90deg, transparent, #334155, transparent)" }} />
+      {/* ── Weekly activity graph ── */}
+      <div>
+        <div className="text-[11px] font-bold text-slate-400 mb-2">📅 This Week</div>
+        <div className="flex items-end justify-between gap-1 h-20">
+          {last7.map((d) => {
+            const pct = d.secs / maxSecs;
+            const isToday = d.key === new Date().toLocaleDateString("en-CA");
+            const hasActivity = d.secs > 0;
+            return (
+              <div key={d.key} className="flex flex-col items-center gap-1 flex-1 group relative">
+                {/* Tooltip */}
+                {hasActivity && (
+                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-700 text-white text-[9px] rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                    {d.sessions} session{d.sessions > 1 ? "s" : ""} · {fmt(d.secs)}
+                  </div>
+                )}
+                {/* Bar */}
+                <div className="w-full rounded-t-sm transition-all duration-500 relative" style={{
+                  height: `${Math.max(pct * 56, hasActivity ? 6 : 2)}px`,
+                  background: isToday
+                    ? "linear-gradient(180deg,#6366f1,#3b82f6)"
+                    : hasActivity
+                    ? "linear-gradient(180deg,#10b981,#0d9488)"
+                    : "#1e293b",
+                  marginTop: "auto",
+                }} />
+                {/* Day label */}
+                <div className={`text-[9px] font-semibold ${isToday ? "text-indigo-400" : "text-slate-500"}`}>
+                  {d.dayName}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-      {/* Recent sessions */}
-      <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>🕒 Recent Sessions</div>
+      {/* ── Divider ── */}
+      <div className="h-px" style={{ background: "linear-gradient(90deg,transparent,#334155,transparent)" }} />
+
+      {/* ── Daily breakdown ── */}
+      <div className="text-[11px] font-bold text-slate-400">📆 Daily Breakdown</div>
 
       {loading && (
-        <div style={{ textAlign: "center", padding: "24px 0", color: "#475569", fontSize: 12 }}>Loading…</div>
+        <div className="text-center py-6 text-slate-500 text-xs">Loading…</div>
       )}
 
       {!loading && logs.length === 0 && (
-        <div style={{ textAlign: "center", padding: "24px 0" }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🌱</div>
-          <div style={{ fontSize: 12, color: "#64748b" }}>No sessions yet.</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 4 }}>Complete a lesson to start!</div>
+        <div className="text-center py-8">
+          <div className="text-4xl mb-2">🌱</div>
+          <div className="text-xs text-slate-500">No sessions yet.</div>
+          <div className="text-[11px] text-slate-600 mt-1">Complete a lesson to start!</div>
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {logs.map((log) => (
-          <div key={log.id} style={{ background: "#0f172a", borderRadius: 10, padding: "10px 12px", border: "1px solid #1e293b" }}>
-            {/* Lesson name */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Noto Sans Arabic', sans-serif", direction: "rtl" }}>
-                {log.lesson_title}
-              </span>
-              <span style={{ fontSize: 10, color: "#475569", flexShrink: 0 }}>{fmtDate(log.created_at)}</span>
+      <div className="flex flex-col gap-3">
+        {dayKeys.map((key) => {
+          const day = byDay[key];
+          const mins = Math.round(day.secs / 60);
+          const hours = (day.secs / 3600).toFixed(1);
+          return (
+            <div key={key} className="rounded-xl border border-slate-800 overflow-hidden" style={{ background: "#0f172a" }}>
+              {/* Day header */}
+              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800">
+                <span className="text-[11px] font-bold text-slate-300">{dayLabel(key)}</span>
+                <span className="text-[9px] text-slate-500">{key}</span>
+              </div>
+              {/* 3-column day stats */}
+              <div className="grid grid-cols-3 gap-0 divide-x divide-slate-800">
+                <div className="py-2 text-center">
+                  <div className="text-sm font-extrabold text-indigo-400">{day.sessions}</div>
+                  <div className="text-[9px] text-slate-500 mt-0.5">Sessions</div>
+                </div>
+                <div className="py-2 text-center">
+                  <div className="text-sm font-extrabold text-emerald-400">
+                    {mins >= 60 ? `${hours}h` : `${mins}m`}
+                  </div>
+                  <div className="text-[9px] text-slate-500 mt-0.5">Practice Time</div>
+                </div>
+                <div className="py-2 text-center">
+                  <div className="text-sm font-extrabold text-violet-400">{fmt(Math.round(day.secs / day.sessions))}</div>
+                  <div className="text-[9px] text-slate-500 mt-0.5">Avg/Session</div>
+                </div>
+              </div>
             </div>
-            {/* 3-column stats per session */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
-              <div style={{ background: "#0f2040", borderRadius: 6, padding: "4px 0", textAlign: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6" }}>{log.wpm}</div>
-                <div style={{ fontSize: 9, color: "#475569" }}>WPM</div>
-              </div>
-              <div style={{ background: "#0f2a1a", borderRadius: 6, padding: "4px 0", textAlign: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: log.accuracy >= 90 ? "#10b981" : log.accuracy >= 70 ? "#f59e0b" : "#ef4444" }}>{log.accuracy}%</div>
-                <div style={{ fontSize: 9, color: "#475569" }}>Accuracy</div>
-              </div>
-              <div style={{ background: "#1a0f2a", borderRadius: 6, padding: "4px 0", textAlign: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#8b5cf6" }}>{fmt(log.duration_seconds)}</div>
-                <div style={{ fontSize: 9, color: "#475569" }}>Time</div>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1378,18 +1432,12 @@ export default function ArabicTypingApp() {
 
   // ─── HOME SCREEN ────────────────────────────────────────────────────
   if (screen === "home") {
+    const homeCardStyle = { ...cardStyle, maxWidth: "none", margin: 0 };
     return (
-      <div style={{ ...containerStyle, padding: isMobile ? "12px 8px" : "24px" }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 320px",
-          gap: isMobile ? 16 : 20,
-          maxWidth: 1280,
-          margin: "0 auto",
-          alignItems: "start",
-        }}>
-        {/* ── Left: main card ── */}
-        <div style={cardStyle}>
+      <div style={containerStyle}>
+        <div className="grid grid-cols-9 gap-5 max-w-screen-xl mx-auto items-start">
+        {/* ── Left: main card (6 of 9 cols) ── */}
+        <div className="col-span-9 lg:col-span-6" style={homeCardStyle}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 20 : 32 }}>
             <div style={{ fontSize: isMobile ? 36 : 48, marginBottom: 8 }}>⌨️</div>
             <h1
@@ -1500,8 +1548,10 @@ export default function ArabicTypingApp() {
           />
         </div>{/* end main card */}
 
-        {/* ── Right: activity sidebar ── */}
-        {!isMobile && <ActivitySidebar onViewAll={() => setScreen("stats")} />}
+        {/* ── Right: activity sidebar (3 of 9 cols) ── */}
+        <div className="hidden lg:block col-span-3">
+          <ActivitySidebar onViewAll={() => setScreen("stats")} />
+        </div>
         </div>{/* end grid */}
       </div>
     );
