@@ -1,22 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e1b4b"/>
-      <stop offset="100%" stop-color="#0f172a"/>
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#10b981"/>
     </linearGradient>
     <linearGradient id="letter" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#10b981"/>
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0f2fe"/>
     </linearGradient>
   </defs>
 
-  <!-- Background rounded square -->
+  <!-- Bright gradient background -->
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
 
-  <!-- Subtle border -->
-  <rect width="64" height="64" rx="14" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.4"/>
-
-  <!-- Arabic letter ع centred -->
+  <!-- White Arabic letter ع -->
   <text
     x="32"
     y="47"
