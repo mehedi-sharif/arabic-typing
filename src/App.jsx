@@ -1294,7 +1294,7 @@ export default function ArabicTypingApp() {
     const existing = JSON.parse(localStorage.getItem(key) || "[]");
     existing.unshift({ ...entry, id: Date.now(), created_at: new Date().toISOString() });
     localStorage.setItem(key, JSON.stringify(existing));
-    supabase.from("activity_logs").insert(entry).catch(() => {});
+    supabase.from("activity_logs").insert(entry).then(() => {});
   }
 
   useEffect(() => {
