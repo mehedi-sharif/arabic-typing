@@ -940,8 +940,8 @@ function ActivitySidebar({ onViewAll }) {
   const maxSecs = Math.max(...last7.map((d) => d.secs), 1);
 
   return (
-    <div className="sticky top-6 max-h-[calc(100vh-48px)] overflow-y-auto flex flex-col gap-4 rounded-2xl border border-white/10 p-5"
-      style={{ background: "rgba(30,41,59,0.85)", backdropFilter: "blur(12px)" }}>
+    <div className="sticky top-6 max-h-[calc(100vh-48px)] overflow-y-auto flex flex-col gap-4 rounded-2xl border border-white/10 p-5 pr-4"
+      style={{ background: "rgba(30,41,59,0.85)", backdropFilter: "blur(12px)", minWidth: 0 }}>
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
@@ -1412,6 +1412,7 @@ export default function ArabicTypingApp() {
 
   const containerStyle = {
     minHeight: "100vh",
+    width: "100%",
     background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
     color: "#f1f5f9",
     fontFamily:
@@ -1434,8 +1435,8 @@ export default function ArabicTypingApp() {
   if (screen === "home") {
     const homeCardStyle = { ...cardStyle, maxWidth: "none", margin: 0 };
     return (
-      <div style={containerStyle}>
-        <div className="grid grid-cols-9 gap-5 max-w-screen-xl mx-auto items-start">
+      <div style={{ ...containerStyle, padding: "24px 48px" }}>
+        <div className="grid grid-cols-9 gap-6 items-start" style={{ maxWidth: 1440, margin: "0 auto", width: "100%" }}>
         {/* ── Left: main card (6 of 9 cols) ── */}
         <div className="col-span-9 lg:col-span-6" style={homeCardStyle}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 20 : 32 }}>
