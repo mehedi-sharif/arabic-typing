@@ -939,75 +939,81 @@ function ActivitySidebar({ onViewAll }) {
   });
   const maxSecs = Math.max(...last7.map((d) => d.secs), 1);
 
+  const todayKey = new Date().toLocaleDateString("en-CA");
+
   return (
-    <div className="sticky top-6 max-h-[calc(100vh-48px)] overflow-y-auto flex flex-col gap-4 rounded-2xl border border-white/10 p-5 pr-4"
-      style={{ background: "rgba(30,41,59,0.85)", backdropFilter: "blur(12px)", minWidth: 0 }}>
+    <div style={{ background: "rgba(15,23,42,0.95)", backdropFilter: "blur(12px)", border: "1px solid rgba(148,163,184,0.1)", borderRadius: 16, padding: "16px 14px", position: "sticky", top: 24, maxHeight: "calc(100vh - 48px)", overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <div className="text-sm font-extrabold text-slate-100">📊 Activity</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Your practice history</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#f1f5f9", letterSpacing: "-0.2px" }}>📊 Activity</div>
+          <div style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>Your practice history</div>
         </div>
-        <button onClick={onViewAll}
-          className="text-[11px] font-semibold text-slate-400 bg-slate-800 border border-slate-600 rounded-lg px-2.5 py-1 cursor-pointer hover:text-slate-200 transition-colors">
+        <button onClick={onViewAll} style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8", background: "#1e293b", border: "1px solid #334155", borderRadius: 6, padding: "4px 8px", cursor: "pointer" }}>
           View all →
         </button>
       </div>
 
       {/* ── 3-column summary stats ── */}
-      <div className="grid grid-cols-3 gap-2">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
         {[
-          { icon: "🗓️", label: "Sessions", value: totalSessions, color: "#3b82f6", border: "#3b82f633" },
-          { icon: "⚡", label: "Avg WPM",  value: avgWpm,         color: "#10b981", border: "#10b98133" },
-          { icon: "🎯", label: "Accuracy", value: `${avgAcc}%`,   color: avgAcc >= 90 ? "#10b981" : avgAcc >= 70 ? "#f59e0b" : "#ef4444", border: "#ffffff11" },
+          { icon: "🗓️", label: "Sessions", value: totalSessions || "—", color: "#3b82f6" },
+          { icon: "⚡",  label: "Avg WPM",  value: totalSessions ? avgWpm : "—", color: "#10b981" },
+          { icon: "🎯", label: "Accuracy", value: totalSessions ? `${avgAcc}%` : "—",
+            color: !totalSessions ? "#475569" : avgAcc >= 90 ? "#10b981" : avgAcc >= 70 ? "#f59e0b" : "#ef4444" },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl p-2 text-center" style={{ background: "#0f172a", border: `1px solid ${s.border}` }}>
-            <div className="text-lg mb-0.5">{s.icon}</div>
-            <div className="text-base font-extrabold leading-none" style={{ color: s.color }}>{totalSessions ? s.value : "—"}</div>
-            <div className="text-[9px] text-slate-500 mt-1">{s.label}</div>
+          <div key={s.label} style={{ background: "#0f172a", borderRadius: 10, padding: "8px 4px", textAlign: "center", border: "1px solid #1e293b" }}>
+            <div style={{ fontSize: 16, lineHeight: 1, marginBottom: 4 }}>{s.icon}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: "#475569", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.4px" }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* ── Total time ── */}
-      {totalSessions > 0 && (
-        <div className="flex justify-between items-center rounded-xl px-3 py-2 border border-slate-800" style={{ background: "#0f172a" }}>
-          <span className="text-[11px] text-slate-500">⏱️ Total practice time</span>
-          <span className="text-[13px] font-bold text-violet-400">{fmt(totalSec)}</span>
-        </div>
-      )}
+      <div style={{ background: "#0f172a", borderRadius: 8, padding: "7px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #1e293b" }}>
+        <span style={{ fontSize: 10, color: "#475569" }}>⏱️ Total practice time</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#8b5cf6" }}>{totalSessions ? fmt(totalSec) : "—"}</span>
+      </div>
 
-      {/* ── Weekly activity graph ── */}
+      {/* ── Weekly bar graph ── */}
       <div>
-        <div className="text-[11px] font-bold text-slate-400 mb-2">📅 This Week</div>
-        <div className="flex items-end justify-between gap-1 h-20">
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>📅 This Week</div>
+        {/* Bars */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60, marginBottom: 4 }}>
           {last7.map((d) => {
             const pct = d.secs / maxSecs;
-            const isToday = d.key === new Date().toLocaleDateString("en-CA");
+            const isToday = d.key === todayKey;
             const hasActivity = d.secs > 0;
+            const barH = hasActivity ? Math.max(Math.round(pct * 48), 6) : 3;
             return (
-              <div key={d.key} className="flex flex-col items-center gap-1 flex-1 group relative">
-                {/* Tooltip */}
-                {hasActivity && (
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-700 text-white text-[9px] rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    {d.sessions} session{d.sessions > 1 ? "s" : ""} · {fmt(d.secs)}
-                  </div>
-                )}
-                {/* Bar */}
-                <div className="w-full rounded-t-sm transition-all duration-500 relative" style={{
-                  height: `${Math.max(pct * 56, hasActivity ? 6 : 2)}px`,
+              <div key={d.key} title={hasActivity ? `${d.sessions} session${d.sessions > 1 ? "s" : ""} · ${fmt(d.secs)}` : "No activity"}
+                style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", cursor: hasActivity ? "pointer" : "default" }}>
+                <div style={{
+                  width: "100%", borderRadius: "3px 3px 0 0",
+                  height: barH,
                   background: isToday
-                    ? "linear-gradient(180deg,#6366f1,#3b82f6)"
+                    ? "linear-gradient(180deg,#818cf8,#6366f1)"
                     : hasActivity
-                    ? "linear-gradient(180deg,#10b981,#0d9488)"
+                    ? "linear-gradient(180deg,#34d399,#10b981)"
                     : "#1e293b",
-                  marginTop: "auto",
+                  transition: "height 0.4s ease",
                 }} />
-                {/* Day label */}
-                <div className={`text-[9px] font-semibold ${isToday ? "text-indigo-400" : "text-slate-500"}`}>
-                  {d.dayName}
-                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Baseline */}
+        <div style={{ height: 1, background: "#1e293b", marginBottom: 4 }} />
+        {/* Day labels */}
+        <div style={{ display: "flex", gap: 4 }}>
+          {last7.map((d) => {
+            const isToday = d.key === todayKey;
+            return (
+              <div key={d.key} style={{ flex: 1, textAlign: "center", fontSize: 9, fontWeight: isToday ? 700 : 400,
+                color: isToday ? "#818cf8" : "#475569" }}>
+                {d.dayName}
               </div>
             );
           })}
@@ -1015,51 +1021,45 @@ function ActivitySidebar({ onViewAll }) {
       </div>
 
       {/* ── Divider ── */}
-      <div className="h-px" style={{ background: "linear-gradient(90deg,transparent,#334155,transparent)" }} />
+      <div style={{ height: 1, background: "linear-gradient(90deg,transparent,#1e293b,transparent)" }} />
 
       {/* ── Daily breakdown ── */}
-      <div className="text-[11px] font-bold text-slate-400">📆 Daily Breakdown</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>📆 Daily Breakdown</div>
 
-      {loading && (
-        <div className="text-center py-6 text-slate-500 text-xs">Loading…</div>
-      )}
+      {loading && <div style={{ textAlign: "center", padding: "20px 0", fontSize: 11, color: "#475569" }}>Loading…</div>}
 
       {!loading && logs.length === 0 && (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-2">🌱</div>
-          <div className="text-xs text-slate-500">No sessions yet.</div>
-          <div className="text-[11px] text-slate-600 mt-1">Complete a lesson to start!</div>
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <div style={{ fontSize: 28, marginBottom: 6 }}>🌱</div>
+          <div style={{ fontSize: 11, color: "#475569" }}>No sessions yet.</div>
+          <div style={{ fontSize: 10, color: "#334155", marginTop: 3 }}>Complete a lesson to start!</div>
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {dayKeys.map((key) => {
           const day = byDay[key];
           const mins = Math.round(day.secs / 60);
           const hours = (day.secs / 3600).toFixed(1);
           return (
-            <div key={key} className="rounded-xl border border-slate-800 overflow-hidden" style={{ background: "#0f172a" }}>
+            <div key={key} style={{ background: "#0f172a", borderRadius: 10, border: "1px solid #1e293b", overflow: "hidden" }}>
               {/* Day header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800">
-                <span className="text-[11px] font-bold text-slate-300">{dayLabel(key)}</span>
-                <span className="text-[9px] text-slate-500">{key}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", borderBottom: "1px solid #1e293b" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1" }}>{dayLabel(key)}</span>
+                <span style={{ fontSize: 9, color: "#334155" }}>{key}</span>
               </div>
-              {/* 3-column day stats */}
-              <div className="grid grid-cols-3 gap-0 divide-x divide-slate-800">
-                <div className="py-2 text-center">
-                  <div className="text-sm font-extrabold text-indigo-400">{day.sessions}</div>
-                  <div className="text-[9px] text-slate-500 mt-0.5">Sessions</div>
-                </div>
-                <div className="py-2 text-center">
-                  <div className="text-sm font-extrabold text-emerald-400">
-                    {mins >= 60 ? `${hours}h` : `${mins}m`}
+              {/* 3 stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)" }}>
+                {[
+                  { value: day.sessions,                                       label: "Sessions",  color: "#6366f1" },
+                  { value: mins >= 60 ? `${hours}h` : `${mins}m`,              label: "Time",      color: "#10b981" },
+                  { value: fmt(Math.round(day.secs / day.sessions)),           label: "Avg",       color: "#8b5cf6" },
+                ].map((col, i) => (
+                  <div key={i} style={{ textAlign: "center", padding: "6px 2px", borderRight: i < 2 ? "1px solid #1e293b" : "none" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: col.color, lineHeight: 1 }}>{col.value}</div>
+                    <div style={{ fontSize: 9, color: "#475569", marginTop: 2 }}>{col.label}</div>
                   </div>
-                  <div className="text-[9px] text-slate-500 mt-0.5">Practice Time</div>
-                </div>
-                <div className="py-2 text-center">
-                  <div className="text-sm font-extrabold text-violet-400">{fmt(Math.round(day.secs / day.sessions))}</div>
-                  <div className="text-[9px] text-slate-500 mt-0.5">Avg/Session</div>
-                </div>
+                ))}
               </div>
             </div>
           );
