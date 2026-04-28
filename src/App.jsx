@@ -878,6 +878,143 @@ function ExploreKeyboard({ isMobile, onBack }) {
 
 // ─── Main App ──────────────────────────────────────────────────────────
 
+// ─── Activity Sidebar ─────────────────────────────────────────────────────
+function ActivitySidebar({ onViewAll }) {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("activity_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => { setLogs(data || []); setLoading(false); });
+  }, []);
+
+  const totalSessions = logs.length;
+  const avgWpm   = totalSessions ? Math.round(logs.reduce((s, l) => s + (l.wpm || 0), 0) / totalSessions) : 0;
+  const avgAcc   = totalSessions ? Math.round(logs.reduce((s, l) => s + (l.accuracy || 0), 0) / totalSessions) : 0;
+  const totalSec = logs.reduce((s, l) => s + (l.duration_seconds || 0), 0);
+
+  function fmt(secs) {
+    if (secs < 60) return `${secs}s`;
+    const m = Math.floor(secs / 60);
+    return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+  }
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+
+  const sidebarStyle = {
+    background: "rgba(30, 41, 59, 0.8)",
+    backdropFilter: "blur(12px)",
+    borderRadius: 16,
+    border: "1px solid rgba(148, 163, 184, 0.1)",
+    padding: "20px 16px",
+    position: "sticky",
+    top: 24,
+    maxHeight: "calc(100vh - 48px)",
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  };
+
+  return (
+    <div style={sidebarStyle}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9" }}>📊 Activity</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>Your progress</div>
+        </div>
+        <button
+          onClick={onViewAll}
+          style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid #334155", borderRadius: 8, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+        >
+          View all →
+        </button>
+      </div>
+
+      {/* 3-column summary stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+        {[
+          { icon: "🗓️", label: "Sessions", value: totalSessions, color: "#3b82f6" },
+          { icon: "⚡", label: "Avg WPM",  value: avgWpm,         color: "#10b981" },
+          { icon: "🎯", label: "Accuracy", value: `${avgAcc}%`,   color: avgAcc >= 90 ? "#10b981" : avgAcc >= 70 ? "#f59e0b" : "#ef4444" },
+        ].map((s) => (
+          <div key={s.label} style={{ background: "#0f172a", borderRadius: 10, padding: "10px 8px", border: `1px solid ${s.color}33`, textAlign: "center" }}>
+            <div style={{ fontSize: 18, marginBottom: 3 }}>{s.icon}</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: s.color, lineHeight: 1 }}>{totalSessions === 0 ? "—" : s.value}</div>
+            <div style={{ fontSize: 9, color: "#64748b", marginTop: 3 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Total time strip */}
+      {totalSessions > 0 && (
+        <div style={{ background: "#0f172a", borderRadius: 10, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #1e293b" }}>
+          <span style={{ fontSize: 11, color: "#64748b" }}>⏱️ Total practice time</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#8b5cf6" }}>{fmt(totalSec)}</span>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div style={{ height: 1, background: "linear-gradient(90deg, transparent, #334155, transparent)" }} />
+
+      {/* Recent sessions */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8" }}>🕒 Recent Sessions</div>
+
+      {loading && (
+        <div style={{ textAlign: "center", padding: "24px 0", color: "#475569", fontSize: 12 }}>Loading…</div>
+      )}
+
+      {!loading && logs.length === 0 && (
+        <div style={{ textAlign: "center", padding: "24px 0" }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🌱</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>No sessions yet.</div>
+          <div style={{ fontSize: 11, color: "#475569", marginTop: 4 }}>Complete a lesson to start!</div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {logs.map((log) => (
+          <div key={log.id} style={{ background: "#0f172a", borderRadius: 10, padding: "10px 12px", border: "1px solid #1e293b" }}>
+            {/* Lesson name */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Noto Sans Arabic', sans-serif", direction: "rtl" }}>
+                {log.lesson_title}
+              </span>
+              <span style={{ fontSize: 10, color: "#475569", flexShrink: 0 }}>{fmtDate(log.created_at)}</span>
+            </div>
+            {/* 3-column stats per session */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
+              <div style={{ background: "#0f2040", borderRadius: 6, padding: "4px 0", textAlign: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6" }}>{log.wpm}</div>
+                <div style={{ fontSize: 9, color: "#475569" }}>WPM</div>
+              </div>
+              <div style={{ background: "#0f2a1a", borderRadius: 6, padding: "4px 0", textAlign: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: log.accuracy >= 90 ? "#10b981" : log.accuracy >= 70 ? "#f59e0b" : "#ef4444" }}>{log.accuracy}%</div>
+                <div style={{ fontSize: 9, color: "#475569" }}>Accuracy</div>
+              </div>
+              <div style={{ background: "#1a0f2a", borderRadius: 6, padding: "4px 0", textAlign: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#8b5cf6" }}>{fmt(log.duration_seconds)}</div>
+                <div style={{ fontSize: 9, color: "#475569" }}>Time</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ArabicTypingApp() {
   const isMobile = useIsMobile();
   const [screen, setScreen] = useState("home");
@@ -1242,7 +1379,16 @@ export default function ArabicTypingApp() {
   // ─── HOME SCREEN ────────────────────────────────────────────────────
   if (screen === "home") {
     return (
-      <div style={containerStyle}>
+      <div style={{ ...containerStyle, padding: isMobile ? "12px 8px" : "24px" }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 320px",
+          gap: isMobile ? 16 : 20,
+          maxWidth: 1280,
+          margin: "0 auto",
+          alignItems: "start",
+        }}>
+        {/* ── Left: main card ── */}
         <div style={cardStyle}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 20 : 32 }}>
             <div style={{ fontSize: isMobile ? 36 : 48, marginBottom: 8 }}>⌨️</div>
@@ -1352,7 +1498,11 @@ export default function ArabicTypingApp() {
             completedHard={completedHard}
             isMobile={isMobile}
           />
-        </div>
+        </div>{/* end main card */}
+
+        {/* ── Right: activity sidebar ── */}
+        {!isMobile && <ActivitySidebar onViewAll={() => setScreen("stats")} />}
+        </div>{/* end grid */}
       </div>
     );
   }
