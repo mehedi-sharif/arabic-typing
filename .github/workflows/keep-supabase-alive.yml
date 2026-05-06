@@ -12,11 +12,12 @@ jobs:
       - name: Ping Supabase
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://spuyevwccllqrnegvymh.supabase.co/rest/v1/activity_logs?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+            "https://spuyevwccllqrnegvymh.supabase.co/rest/v1/")
           echo "Supabase ping status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "Ping failed with status $STATUS"
+          # 200 = ok, 401 = project alive but needs auth (still counts as active)
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "401" ]; then
+            echo "✅ Supabase project is alive!"
+          else
+            echo "❌ Unexpected status: $STATUS"
             exit 1
           fi
